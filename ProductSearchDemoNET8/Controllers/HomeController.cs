@@ -1,6 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
-using ProductSearchDemoNET8.AppData;
 using ProductSearchDemoNET8.Models;
 using System.Diagnostics;
 using System.Linq;
@@ -10,32 +9,35 @@ namespace ProductSearchDemoNET8.Controllers
     public class HomeController : Controller
     {
         private readonly ILogger<HomeController> _logger;
+        private List<ProductViewModel> _productViewModels;
 
-        private readonly AppDbContext _context;
-
-        public HomeController(AppDbContext context, ILogger<HomeController> logger)
+        public HomeController(ILogger<HomeController> logger)
         {
-            _context = context;
             _logger = logger;
         }
 
         public IActionResult Index()
         {
-            var products = _context.Products.ToList();
-            var productViewModels = products.Select(p => new ProductViewModel
+            PrepareProductViewModels();
+
+            return View(_productViewModels);
+        }
+
+        private void PrepareProductViewModels()
+        {
+            _productViewModels = Products.ProductList.Select(p => new ProductViewModel
             {
                 Description = p.Description,
                 ImagePath = p.ImagePath
             }).ToList();
-
-            return View(productViewModels);
         }
 
         [HttpGet]
         public IActionResult SearchProducts(string searchString)
         {
-            var searchResults = _context.Products
-                .Where(p => string.IsNullOrEmpty(searchString) || p.Name.Contains(searchString))
+            PrepareProductViewModels();
+            var searchResults = _productViewModels
+                .Where(p => string.IsNullOrEmpty(searchString) || p.Description.ToLower().Contains(searchString.ToLower()))
                 .Select(p => new ProductViewModel
                 {
                     Description = p.Description,
